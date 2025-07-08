@@ -1,4 +1,6 @@
 import React from 'react';
+import { DotsHorizontalIcon, Pencil1Icon, TrashIcon } from '@radix-ui/react-icons';
+import { Button } from "@/components/ui/button";
 
 interface TemplateProps {
   data: {
@@ -29,9 +31,14 @@ interface TemplateProps {
     paragraphSpacing: number;
     lineSpacing: number;
   };
+  selectedSection?: string | null;
+  setSelectedSection?: (section: string) => void;
+  onEditSection?: (section: string) => void;
+  onDeleteSection?: (section: string) => void;
+  onMoveSection?: (section: string, direction: 'up' | 'down') => void;
 }
 
-export default function ClassicTemplate({ data, styling }: TemplateProps) {
+export default function ClassicTemplate({ data, styling, selectedSection, setSelectedSection, onEditSection, onDeleteSection, onMoveSection }: TemplateProps) {
   return (
     <div 
       className="bg-white w-full min-h-[800px] shadow-xl"
@@ -60,83 +67,143 @@ export default function ClassicTemplate({ data, styling }: TemplateProps) {
       <div className="px-8 py-6" style={{ gap: styling.sectionSpacing, display: 'flex', flexDirection: 'column' }}>
         {/* Summary */}
         {data.summary && (
-          <section style={{ marginBottom: styling.sectionSpacing }}>
-            <h2 
-              className={`font-bold mb-3 ${styling.primaryColor.replace('bg-', 'text-')}`}
-              style={{ fontSize: styling.headingSize }}
-            >
-              SUMMARY
-            </h2>
-            <div style={{ marginBottom: styling.paragraphSpacing }}>
-              <p className="text-gray-700">{data.summary}</p>
-            </div>
-          </section>
+          <div
+            className={selectedSection === 'summary' ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
+            style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
+            onClick={() => setSelectedSection && setSelectedSection('summary')}
+          >
+            {selectedSection === 'summary' && (
+              <div className="absolute left-0 top-0 w-full flex justify-between items-center px-2 py-1 bg-blue-50 rounded-t-lg z-10">
+                <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onMoveSection && onMoveSection('summary', 'up'); }} title="Move" className="cursor-pointer"><DotsHorizontalIcon /></Button>
+                <span className="flex gap-2">
+                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onEditSection && onEditSection('summary'); }} title="Edit" className="cursor-pointer"><Pencil1Icon /></Button>
+                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection('summary'); }} title="Delete" className="cursor-pointer"><TrashIcon /></Button>
+                </span>
+              </div>
+            )}
+            <section>
+              <h2 
+                className={`font-bold mb-3 ${styling.primaryColor.replace('bg-', 'text-')}`}
+                style={{ fontSize: styling.headingSize }}
+              >
+                SUMMARY
+              </h2>
+              <div style={{ marginBottom: styling.paragraphSpacing }}>
+                <p className="text-gray-700">{data.summary}</p>
+              </div>
+            </section>
+          </div>
         )}
 
         {/* Skills */}
         {data.skills && data.skills.length > 0 && (
-          <section style={{ marginBottom: styling.sectionSpacing }}>
-            <h2 
-              className={`font-bold mb-3 ${styling.primaryColor.replace('bg-', 'text-')}`}
-              style={{ fontSize: styling.headingSize }}
-            >
-              SKILLS
-            </h2>
-            <div style={{ marginBottom: styling.paragraphSpacing }}>
-              <p className="text-gray-700">{data.skills.join(', ')}</p>
-            </div>
-          </section>
+          <div
+            className={selectedSection === 'skills' ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
+            style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
+            onClick={() => setSelectedSection && setSelectedSection('skills')}
+          >
+            {selectedSection === 'skills' && (
+              <div className="absolute left-0 top-0 w-full flex justify-between items-center px-2 py-1 bg-blue-50 rounded-t-lg z-10">
+                <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onMoveSection && onMoveSection('skills', 'up'); }} title="Move" className="cursor-pointer"><DotsHorizontalIcon /></Button>
+                <span className="flex gap-2">
+                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onEditSection && onEditSection('skills'); }} title="Edit" className="cursor-pointer"><Pencil1Icon /></Button>
+                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection('skills'); }} title="Delete" className="cursor-pointer"><TrashIcon /></Button>
+                </span>
+              </div>
+            )}
+            <section>
+              <h2 
+                className={`font-bold mb-3 ${styling.primaryColor.replace('bg-', 'text-')}`}
+                style={{ fontSize: styling.headingSize }}
+              >
+                SKILLS
+              </h2>
+              <div style={{ marginBottom: styling.paragraphSpacing }}>
+                <p className="text-gray-700">{data.skills.join(', ')}</p>
+              </div>
+            </section>
+          </div>
         )}
 
         {/* Experience */}
         {data.experience && data.experience.length > 0 && (
-          <section style={{ marginBottom: styling.sectionSpacing }}>
-            <h2 
-              className={`font-bold mb-3 ${styling.primaryColor.replace('bg-', 'text-')}`}
-              style={{ fontSize: styling.headingSize }}
-            >
-              EXPERIENCE
-            </h2>
-            <div style={{ gap: styling.paragraphSpacing, display: 'flex', flexDirection: 'column' }}>
-              {data.experience.map((exp, index) => (
-                <div key={index} style={{ marginBottom: styling.paragraphSpacing }}>
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className="font-semibold text-gray-800">{exp.title}</h3>
-                    <span className="text-sm text-gray-600">{exp.duration}</span>
+          <div
+            className={selectedSection === 'experience' ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
+            style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
+            onClick={() => setSelectedSection && setSelectedSection('experience')}
+          >
+            {selectedSection === 'experience' && (
+              <div className="absolute left-0 top-0 w-full flex justify-between items-center px-2 py-1 bg-blue-50 rounded-t-lg z-10">
+                <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onMoveSection && onMoveSection('experience', 'up'); }} title="Move" className="cursor-pointer"><DotsHorizontalIcon /></Button>
+                <span className="flex gap-2">
+                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onEditSection && onEditSection('experience'); }} title="Edit" className="cursor-pointer"><Pencil1Icon /></Button>
+                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection('experience'); }} title="Delete" className="cursor-pointer"><TrashIcon /></Button>
+                </span>
+              </div>
+            )}
+            <section>
+              <h2 
+                className={`font-bold mb-3 ${styling.primaryColor.replace('bg-', 'text-')}`}
+                style={{ fontSize: styling.headingSize }}
+              >
+                EXPERIENCE
+              </h2>
+              <div style={{ gap: styling.paragraphSpacing, display: 'flex', flexDirection: 'column' }}>
+                {data.experience.map((exp, index) => (
+                  <div key={index} style={{ marginBottom: styling.paragraphSpacing }}>
+                    <div className="flex justify-between items-start mb-1">
+                      <h3 className="font-semibold text-gray-800">{exp.title}</h3>
+                      <span className="text-sm text-gray-600">{exp.duration}</span>
+                    </div>
+                    <p className="text-gray-600 mb-2">{exp.company}</p>
+                    <ul className="list-disc list-inside text-gray-700 space-y-1">
+                      {exp.description.map((desc, idx) => (
+                        <li key={idx}>{desc}</li>
+                      ))}
+                    </ul>
                   </div>
-                  <p className="text-gray-600 mb-2">{exp.company}</p>
-                  <ul className="list-disc list-inside text-gray-700 space-y-1">
-                    {exp.description.map((desc, idx) => (
-                      <li key={idx}>{desc}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </section>
+                ))}
+              </div>
+            </section>
+          </div>
         )}
 
         {/* Education */}
         {data.education && data.education.length > 0 && (
-          <section style={{ marginBottom: styling.sectionSpacing }}>
-            <h2 
-              className={`font-bold mb-3 ${styling.primaryColor.replace('bg-', 'text-')}`}
-              style={{ fontSize: styling.headingSize }}
-            >
-              EDUCATION
-            </h2>
-            <div style={{ gap: styling.paragraphSpacing, display: 'flex', flexDirection: 'column' }}>
-              {data.education.map((edu, index) => (
-                <div key={index} style={{ marginBottom: styling.paragraphSpacing }}>
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className="font-semibold text-gray-800">{edu.degree}</h3>
-                    <span className="text-sm text-gray-600">{edu.year}</span>
+          <div
+            className={selectedSection === 'education' ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
+            style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
+            onClick={() => setSelectedSection && setSelectedSection('education')}
+          >
+            {selectedSection === 'education' && (
+              <div className="absolute left-0 top-0 w-full flex justify-between items-center px-2 py-1 bg-blue-50 rounded-t-lg z-10">
+                <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onMoveSection && onMoveSection('education', 'up'); }} title="Move" className="cursor-pointer"><DotsHorizontalIcon /></Button>
+                <span className="flex gap-2">
+                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onEditSection && onEditSection('education'); }} title="Edit" className="cursor-pointer"><Pencil1Icon /></Button>
+                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection('education'); }} title="Delete" className="cursor-pointer"><TrashIcon /></Button>
+                </span>
+              </div>
+            )}
+            <section>
+              <h2 
+                className={`font-bold mb-3 ${styling.primaryColor.replace('bg-', 'text-')}`}
+                style={{ fontSize: styling.headingSize }}
+              >
+                EDUCATION
+              </h2>
+              <div style={{ gap: styling.paragraphSpacing, display: 'flex', flexDirection: 'column' }}>
+                {data.education.map((edu, index) => (
+                  <div key={index} style={{ marginBottom: styling.paragraphSpacing }}>
+                    <div className="flex justify-between items-start mb-1">
+                      <h3 className="font-semibold text-gray-800">{edu.degree}</h3>
+                      <span className="text-sm text-gray-600">{edu.year}</span>
+                    </div>
+                    <p className="text-gray-600">{edu.institution}</p>
                   </div>
-                  <p className="text-gray-600">{edu.institution}</p>
-                </div>
-              ))}
-            </div>
-          </section>
+                ))}
+              </div>
+            </section>
+          </div>
         )}
       </div>
     </div>

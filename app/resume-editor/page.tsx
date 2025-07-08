@@ -16,6 +16,7 @@ import {
 } from "../../components/templates";
 import { ResumeData, TemplateStyling, TemplateConfig } from "../../components/types";
 import ZoomController from "../../components/ZoomController";
+import Button from "../../Button";
 
 const COLORS = [
   { name: "Red", value: "bg-red-600", text: "text-red-600" },
@@ -68,6 +69,14 @@ export default function ResumeEditor() {
   const [lineSpacing, setLineSpacing] = useState(1.2);
   const [zoom, setZoom] = useState(1);
   const [fitToWidth, setFitToWidth] = useState(false);
+  const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
+  const [sectionFonts, setSectionFonts] = useState<{ [key: number]: string }>(
+    () => Object.fromEntries(DEFAULT_SECTIONS.map((s) => [s.id, FONT_STYLES[0]]))
+  );
+  const [spellCheckStatus, setSpellCheckStatus] = useState<'idle' | 'checking' | 'done'>("idle");
+  const [spellCheckProgress, setSpellCheckProgress] = useState(0);
+  const [spellCheckResult, setSpellCheckResult] = useState<{ section: string; error: string }[]>([]);
+  const [selectedPreviewSection, setSelectedPreviewSection] = useState<string | null>(null);
 
   const [resumeData, setResumeData] = useState<ResumeData>({
     name: "FIRST NAME SURNAME",
@@ -157,6 +166,58 @@ export default function ResumeEditor() {
   };
   const handleRemoveSection = (id: number) => {
     setSections(sections.filter((s) => s.id !== id));
+  };
+
+  // Trigger spell check when Spell tab is activated
+  React.useEffect(() => {
+    if (activeTab === "spell") {
+      setSpellCheckStatus("checking");
+      setSpellCheckProgress(0);
+      setSpellCheckResult([{ section: "Summary", error: "Spelling mistake in 'Experinced'" }]);
+      // Simulate progress
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += Math.floor(Math.random() * 20) + 10;
+        if (progress >= 100) {
+          progress = 100;
+          clearInterval(interval);
+          // Simulate result: you can set errors here for demo
+          // Example: setSpellCheckResult([{ section: "Summary", error: "Spelling mistake in 'Experinced'" }]);
+          setSpellCheckResult([]); // Empty means no errors
+          setSpellCheckStatus("done");
+        }
+        setSpellCheckProgress(progress);
+      }, 400);
+      return () => clearInterval(interval);
+    } else {
+      setSpellCheckStatus("idle");
+      setSpellCheckProgress(0);
+      setSpellCheckResult([]);
+    }
+  }, [activeTab]);
+
+  const handlePreviewSectionEdit = (section: string) => {
+    // Optionally, open the sidebar editor for this section
+    setSelectedSectionId(
+      sections.find(s => s.name.toLowerCase().includes(section.toLowerCase()))?.id || null
+    );
+  };
+  const handlePreviewSectionDelete = (section: string) => {
+    // Remove section from sidebar and preview
+    const sec = sections.find(s => s.name.toLowerCase().includes(section.toLowerCase()));
+    if (sec) handleRemoveSection(sec.id);
+  };
+  const handlePreviewSectionMove = (section: string, direction: 'up' | 'down') => {
+    const idx = sections.findIndex(s => s.name.toLowerCase().includes(section.toLowerCase()));
+    if (idx === -1) return;
+    const newSections = [...sections];
+    if (direction === 'up' && idx > 0) {
+      [newSections[idx - 1], newSections[idx]] = [newSections[idx], newSections[idx - 1]];
+      setSections(newSections);
+    } else if (direction === 'down' && idx < newSections.length - 1) {
+      [newSections[idx], newSections[idx + 1]] = [newSections[idx + 1], newSections[idx]];
+      setSections(newSections);
+    }
   };
 
   return (
@@ -287,51 +348,435 @@ export default function ResumeEditor() {
                   </button>
                 </div>
                 <ul className="space-y-2">
-                  {sections.map((section) => (
-                    <li key={section.id} className="flex items-center gap-2 group">
-                      {editingSection === section.id ? (
-                        <>
-                          <input
-                            className="border rounded px-2 py-1 text-sm flex-1"
-                            value={editingValue}
-                            onChange={(e) => setEditingValue(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") handleSaveEditSection(section.id);
-                              else if (e.key === "Escape") {
-                                setEditingSection(null);
-                                setEditingValue("");
-                              }
-                            }}
-                            onBlur={() => handleSaveEditSection(section.id)}
-                            autoFocus
-                          />
-                          <button
-                            className="text-green-600 text-sm"
-                            onClick={() => handleSaveEditSection(section.id)}
-                          >
-                            ✔️
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <span className="flex-1">{section.name}</span>
-                          <button
-                            className="text-blue-600 text-sm"
-                            onClick={() => handleEditSection(section.id, section.name)}
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            className="text-red-500 text-sm opacity-0 group-hover:opacity-100 transition"
-                            onClick={() => handleRemoveSection(section.id)}
-                          >
-                            🗑️
-                          </button>
-                        </>
-                      )}
-                    </li>
-                  ))}
+                  {sections.map((section, idx) => {
+                    const isSelected = selectedSectionId === section.id;
+                    return (
+                      <li
+                        key={section.id}
+                        className={`relative group flex items-center gap-2 rounded transition-all ${isSelected ? "border-2 border-blue-600 shadow-lg bg-blue-50" : "border border-gray-200 bg-white"} p-2`}
+                        style={{ minHeight: 40, cursor: 'pointer' }}
+                        onClick={() => setSelectedSectionId(section.id)}
+                      >
+                        {editingSection === section.id ? (
+                          <div className="flex-1 flex flex-col gap-1">
+                            <input
+                              className="border rounded px-2 py-1 text-sm w-full"
+                              value={editingValue}
+                              onChange={(e) => setEditingValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleSaveEditSection(section.id);
+                                else if (e.key === "Escape") {
+                                  setEditingSection(null);
+                                  setEditingValue("");
+                                }
+                              }}
+                              autoFocus
+                            />
+                            <button
+                              className="mt-1 px-2 py-1 bg-blue-600 text-white rounded text-xs self-end"
+                              onClick={() => handleSaveEditSection(section.id)}
+                            >
+                              Done
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <span
+                              className={`flex-1 ${isSelected ? "font-bold text-blue-600" : ""}`}
+                            >
+                              {section.name}
+                            </span>
+                            {/* Only show action buttons if selected */}
+                            {isSelected && (
+                              <div className="flex gap-1 ml-2">
+                                {/* Move Up */}
+                                <button
+                                  className="p-1 rounded hover:bg-blue-100 text-gray-500 hover:text-blue-600 border border-transparent hover:border-blue-200"
+                                  onClick={e => { e.stopPropagation(); if (idx > 0) { const newSections = [...sections]; [newSections[idx - 1], newSections[idx]] = [newSections[idx], newSections[idx - 1]]; setSections(newSections); }}}
+                                  disabled={idx === 0}
+                                  title="Move Up"
+                                >
+                                  ↑
+                                </button>
+                                {/* Move Down */}
+                                <button
+                                  className="p-1 rounded hover:bg-blue-100 text-gray-500 hover:text-blue-600 border border-transparent hover:border-blue-200"
+                                  onClick={e => { e.stopPropagation(); if (idx < sections.length - 1) { const newSections = [...sections]; [newSections[idx], newSections[idx + 1]] = [newSections[idx + 1], newSections[idx]]; setSections(newSections); }}}
+                                  disabled={idx === sections.length - 1}
+                                  title="Move Down"
+                                >
+                                  ↓
+                                </button>
+                                {/* Edit */}
+                                <button
+                                  className="p-1 rounded hover:bg-yellow-100 text-yellow-600 hover:text-yellow-800 border border-transparent hover:border-yellow-200"
+                                  onClick={e => { e.stopPropagation(); handleEditSection(section.id, section.name); }}
+                                  title="Edit section name"
+                                >
+                                  ✏️
+                                </button>
+                                {/* Delete */}
+                                <button
+                                  className="p-1 rounded hover:bg-red-100 text-red-500 hover:text-red-700 border border-transparent hover:border-red-200"
+                                  onClick={e => { e.stopPropagation(); handleRemoveSection(section.id); }}
+                                  title="Delete section"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            )}
+                            {/* Font style dropdown for selected section */}
+                            {isSelected && editingSection !== section.id && (
+                              <div className="ml-2 max-w-[120px] overflow-x-auto">
+                                <select
+                                  className="border rounded px-1 py-0.5 text-xs w-full min-w-[100px]"
+                                  style={{ maxWidth: 120 }}
+                                  value={sectionFonts[section.id] || FONT_STYLES[0]}
+                                  onChange={e => {
+                                    setSectionFonts({ ...sectionFonts, [section.id]: e.target.value });
+                                  }}
+                                  onClick={e => e.stopPropagation()}
+                                >
+                                  {FONT_STYLES.map(f => (
+                                    <option key={f} value={f}>{f}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
+                {/* Live editing panel for selected section */}
+                {selectedSectionId && (() => {
+                  const section = sections.find(s => s.id === selectedSectionId);
+                  if (!section) return null;
+                  if (section.name.toLowerCase().includes("summary")) {
+                    return (
+                      <div className="mt-4">
+                        <label className="block text-xs font-semibold mb-1">Edit Summary</label>
+                        <textarea
+                          className="border rounded px-2 py-1 w-full text-sm"
+                          rows={4}
+                          value={resumeData.summary}
+                          onChange={e => setResumeData({ ...resumeData, summary: e.target.value })}
+                        />
+                        <button
+                          className="mt-2 px-2 py-1 bg-blue-600 text-white rounded text-xs float-right"
+                          onClick={() => setSelectedSectionId(null)}
+                        >
+                          Done
+                        </button>
+                      </div>
+                    );
+                  }
+                  if (section.name.toLowerCase().includes("skill")) {
+                    return (
+                      <div className="mt-4">
+                        <label className="block text-xs font-semibold mb-1">Edit Skills (comma separated)</label>
+                        <input
+                          className="border rounded px-2 py-1 w-full text-sm"
+                          value={resumeData.skills?.join(", ") || ""}
+                          onChange={e => setResumeData({ ...resumeData, skills: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })}
+                        />
+                        <button
+                          className="mt-2 px-2 py-1 bg-blue-600 text-white rounded text-xs float-right"
+                          onClick={() => setSelectedSectionId(null)}
+                        >
+                          Done
+                        </button>
+                      </div>
+                    );
+                  }
+                  if (section.name.toLowerCase().includes("experience")) {
+                    return (
+                      <div className="mt-4">
+                        <label className="block text-xs font-semibold mb-1">Edit Experience</label>
+                        {(resumeData.experience || []).map((exp, idx) => (
+                          <div key={idx} className="mb-2 border rounded p-2">
+                            <input
+                              className="border-b w-full mb-1 text-sm"
+                              value={exp.title}
+                              onChange={e => {
+                                const updated = [...(resumeData.experience || [])];
+                                updated[idx] = { ...updated[idx], title: e.target.value };
+                                setResumeData({ ...resumeData, experience: updated });
+                              }}
+                              placeholder="Job Title"
+                            />
+                            <input
+                              className="border-b w-full mb-1 text-sm"
+                              value={exp.company}
+                              onChange={e => {
+                                const updated = [...(resumeData.experience || [])];
+                                updated[idx] = { ...updated[idx], company: e.target.value };
+                                setResumeData({ ...resumeData, experience: updated });
+                              }}
+                              placeholder="Company"
+                            />
+                            <input
+                              className="border-b w-full mb-1 text-sm"
+                              value={exp.duration}
+                              onChange={e => {
+                                const updated = [...(resumeData.experience || [])];
+                                updated[idx] = { ...updated[idx], duration: e.target.value };
+                                setResumeData({ ...resumeData, experience: updated });
+                              }}
+                              placeholder="Duration"
+                            />
+                            <textarea
+                              className="border w-full text-sm"
+                              rows={2}
+                              value={exp.description.join("\n")}
+                              onChange={e => {
+                                const updated = [...(resumeData.experience || [])];
+                                updated[idx] = { ...updated[idx], description: e.target.value.split("\n") };
+                                setResumeData({ ...resumeData, experience: updated });
+                              }}
+                              placeholder="Description (one per line)"
+                            />
+                          </div>
+                        ))}
+                        <button
+                          className="mt-2 px-2 py-1 bg-blue-600 text-white rounded text-xs float-right"
+                          onClick={() => setSelectedSectionId(null)}
+                        >
+                          Done
+                        </button>
+                      </div>
+                    );
+                  }
+                  if (section.name.toLowerCase().includes("education")) {
+                    return (
+                      <div className="mt-4">
+                        <label className="block text-xs font-semibold mb-1">Edit Education</label>
+                        {(resumeData.education || []).map((edu, idx) => (
+                          <div key={idx} className="mb-2 border rounded p-2">
+                            <input
+                              className="border-b w-full mb-1 text-sm"
+                              value={edu.degree}
+                              onChange={e => {
+                                const updated = [...(resumeData.education || [])];
+                                updated[idx] = { ...updated[idx], degree: e.target.value };
+                                setResumeData({ ...resumeData, education: updated });
+                              }}
+                              placeholder="Degree"
+                            />
+                            <input
+                              className="border-b w-full mb-1 text-sm"
+                              value={edu.institution}
+                              onChange={e => {
+                                const updated = [...(resumeData.education || [])];
+                                updated[idx] = { ...updated[idx], institution: e.target.value };
+                                setResumeData({ ...resumeData, education: updated });
+                              }}
+                              placeholder="Institution"
+                            />
+                            <input
+                              className="border-b w-full mb-1 text-sm"
+                              value={edu.year}
+                              onChange={e => {
+                                const updated = [...(resumeData.education || [])];
+                                updated[idx] = { ...updated[idx], year: e.target.value };
+                                setResumeData({ ...resumeData, education: updated });
+                              }}
+                              placeholder="Year"
+                            />
+                          </div>
+                        ))}
+                        <button
+                          className="mt-2 px-2 py-1 bg-blue-600 text-white rounded text-xs float-right"
+                          onClick={() => setSelectedSectionId(null)}
+                        >
+                          Done
+                        </button>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+            )}
+
+            {activeTab === "format" && (
+              <div>
+                <h3 className="font-bold mb-2">Formatting</h3>
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold mb-1">Font Style</label>
+                  <select
+                    className="border rounded px-2 py-1 w-full"
+                    value={fontStyle}
+                    onChange={e => setFontStyle(e.target.value)}
+                  >
+                    {FONT_STYLES.map(f => (
+                      <option key={f} value={f}>{f}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold mb-1">Font Size</label>
+                  <input
+                    type="range"
+                    min={12}
+                    max={32}
+                    value={fontSize}
+                    onChange={e => setFontSize(Number(e.target.value))}
+                    className="w-full"
+                  />
+                  <span className="text-xs">{fontSize}px</span>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold mb-1">Heading Size</label>
+                  <input
+                    type="range"
+                    min={16}
+                    max={40}
+                    value={headingSize}
+                    onChange={e => setHeadingSize(Number(e.target.value))}
+                    className="w-full"
+                  />
+                  <span className="text-xs">{headingSize}px</span>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold mb-1">Section Spacing</label>
+                  <input
+                    type="range"
+                    min={8}
+                    max={40}
+                    value={sectionSpacing}
+                    onChange={e => setSectionSpacing(Number(e.target.value))}
+                    className="w-full"
+                  />
+                  <span className="text-xs">{sectionSpacing}px</span>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold mb-1">Paragraph Spacing</label>
+                  <input
+                    type="range"
+                    min={0}
+                    max={32}
+                    value={paragraphSpacing}
+                    onChange={e => setParagraphSpacing(Number(e.target.value))}
+                    className="w-full"
+                  />
+                  <span className="text-xs">{paragraphSpacing}px</span>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold mb-1">Line Spacing</label>
+                  <input
+                    type="range"
+                    min={1}
+                    max={2}
+                    step={0.05}
+                    value={lineSpacing}
+                    onChange={e => setLineSpacing(Number(e.target.value))}
+                    className="w-full"
+                  />
+                  <span className="text-xs">{lineSpacing}</span>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold mb-1">Top & Bottom Margin</label>
+                  <input
+                    type="range"
+                    min={0}
+                    max={64}
+                    value={0} // Not yet implemented in state
+                    disabled
+                    className="w-full opacity-50 cursor-not-allowed"
+                  />
+                  <span className="text-xs text-gray-400">(Coming soon)</span>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold mb-1">Side Margins</label>
+                  <input
+                    type="range"
+                    min={0}
+                    max={64}
+                    value={0} // Not yet implemented in state
+                    disabled
+                    className="w-full opacity-50 cursor-not-allowed"
+                  />
+                  <span className="text-xs text-gray-400">(Coming soon)</span>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold mb-1">Paragraph Indent</label>
+                  <input
+                    type="range"
+                    min={0}
+                    max={32}
+                    value={0} // Not yet implemented in state
+                    disabled
+                    className="w-full opacity-50 cursor-not-allowed"
+                  />
+                  <span className="text-xs text-gray-400">(Coming soon)</span>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold mb-1 text-gray-400">Line Weight</label>
+                  <input
+                    type="range"
+                    min={1}
+                    max={10}
+                    value={1}
+                    disabled
+                    className="w-full opacity-50 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+            )}
+
+            {activeTab === "spell" && (
+              <div>
+                <h3 className="font-bold mb-2">Spell Check</h3>
+                {spellCheckStatus === "checking" && (
+                  <div className="mb-3">
+                    <div className="font-semibold text-lg">Hang in there!</div>
+                    <div className="text-xs mb-2">Checking for spelling mistakes ... {spellCheckProgress}%</div>
+                    <div className="w-full bg-gray-200 rounded h-2 mb-2">
+                      <div
+                        className="bg-green-400 h-2 rounded transition-all duration-300"
+                        style={{ width: `${spellCheckProgress}%` }}
+                      />
+                    </div>
+                    <button className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded mt-2 text-sm font-medium border border-blue-100">
+                      <span className="bg-blue-200 rounded-full p-1">🔄</span>
+                      Try a different resume design
+                    </button>
+                  </div>
+                )}
+                {spellCheckStatus === "done" && (
+                  <div className="mb-3">
+                    {spellCheckResult.length === 0 ? (
+                      <>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="inline-block">
+                            <svg width="32" height="32" fill="none"><rect width="32" height="32" rx="8" fill="#E6F4EA"/><path d="M10 16l5 5 7-9" stroke="#34A853" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          </span>
+                          <span className="font-bold text-lg">Spell check complete</span>
+                        </div>
+                        <div className="text-sm mb-2">No errors found.</div>
+                        <button className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded text-sm font-medium border border-blue-100">
+                          <span className="bg-blue-200 rounded-full p-1">🔄</span>
+                          Try a different resume design
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="font-bold text-lg mb-2 text-red-600">Spelling mistakes found:</div>
+                        <ul className="mb-2 list-disc pl-5 text-sm">
+                          {spellCheckResult.map((err, idx) => (
+                            <li key={idx}><b>{err.section}:</b> {err.error}</li>
+                          ))}
+                        </ul>
+                        <button className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded text-sm font-medium border border-blue-100">
+                          <span className="bg-blue-200 rounded-full p-1">🔄</span>
+                          Try a different resume design
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -346,8 +791,8 @@ export default function ResumeEditor() {
               setFitToWidth(false);
             }}
             fitToWidth={fitToWidth}
-            setFitToWidth={() => setFitToWidth((v) => !v)}
-            style={{}}
+            setFitToWidth={setFitToWidth}
+            style={{ position: 'fixed', left: 320, top: '50%', transform: 'translateY(-50%)', zIndex: 30 }}
           />
           <div
             ref={previewRef}
@@ -371,7 +816,23 @@ export default function ResumeEditor() {
                 lineSpacing: lineSpacing,
               };
 
-              return <TemplateComponent data={resumeData} styling={styling} />;
+              // Find the selected section name from selectedSectionId
+              let selectedSection: string | null = null;
+              if (selectedSectionId) {
+                const sec = sections.find(s => s.id === selectedSectionId);
+                selectedSection = sec ? sec.name.toLowerCase() : null;
+              }
+
+              return <TemplateComponent 
+                data={resumeData} 
+                styling={styling} 
+                selectedSection={selectedSection}
+                setSelectedSection={(section: string) => {
+                  // Find section by name and set selectedSectionId
+                  const sec = sections.find(s => s.name.toLowerCase() === section.toLowerCase());
+                  if (sec) setSelectedSectionId(sec.id);
+                }}
+              />;
             })()}
           </div>
         </main>
