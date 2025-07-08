@@ -21,6 +21,11 @@ interface TemplateProps {
       institution: string;
       year: string;
     }>;
+    customSections?: Array<{
+      id: string;
+      name: string;
+      content: string;
+    }>;
   };
   styling: {
     primaryColor: string;
@@ -68,11 +73,11 @@ export default function ClassicTemplate({ data, styling, selectedSection, setSel
         {/* Summary */}
         {data.summary && (
           <div
-            className={selectedSection === 'summary' ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
+            className={selectedSection && selectedSection.includes('summary') ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
             style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
             onClick={() => setSelectedSection && setSelectedSection('summary')}
           >
-            {selectedSection === 'summary' && (
+            {selectedSection && selectedSection.includes('summary') && (
               <div className="absolute left-0 top-0 w-full flex justify-between items-center px-2 py-1 bg-blue-50 rounded-t-lg z-10">
                 <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onMoveSection && onMoveSection('summary', 'up'); }} title="Move" className="cursor-pointer"><DotsHorizontalIcon /></Button>
                 <span className="flex gap-2">
@@ -98,11 +103,11 @@ export default function ClassicTemplate({ data, styling, selectedSection, setSel
         {/* Skills */}
         {data.skills && data.skills.length > 0 && (
           <div
-            className={selectedSection === 'skills' ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
+            className={selectedSection && selectedSection.includes('skill') ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
             style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
             onClick={() => setSelectedSection && setSelectedSection('skills')}
           >
-            {selectedSection === 'skills' && (
+            {selectedSection && selectedSection.includes('skill') && (
               <div className="absolute left-0 top-0 w-full flex justify-between items-center px-2 py-1 bg-blue-50 rounded-t-lg z-10">
                 <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onMoveSection && onMoveSection('skills', 'up'); }} title="Move" className="cursor-pointer"><DotsHorizontalIcon /></Button>
                 <span className="flex gap-2">
@@ -128,11 +133,11 @@ export default function ClassicTemplate({ data, styling, selectedSection, setSel
         {/* Experience */}
         {data.experience && data.experience.length > 0 && (
           <div
-            className={selectedSection === 'experience' ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
+            className={selectedSection && selectedSection.includes('experience') ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
             style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
             onClick={() => setSelectedSection && setSelectedSection('experience')}
           >
-            {selectedSection === 'experience' && (
+            {selectedSection && selectedSection.includes('experience') && (
               <div className="absolute left-0 top-0 w-full flex justify-between items-center px-2 py-1 bg-blue-50 rounded-t-lg z-10">
                 <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onMoveSection && onMoveSection('experience', 'up'); }} title="Move" className="cursor-pointer"><DotsHorizontalIcon /></Button>
                 <span className="flex gap-2">
@@ -171,11 +176,11 @@ export default function ClassicTemplate({ data, styling, selectedSection, setSel
         {/* Education */}
         {data.education && data.education.length > 0 && (
           <div
-            className={selectedSection === 'education' ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
+            className={selectedSection && selectedSection.includes('education') ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
             style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
             onClick={() => setSelectedSection && setSelectedSection('education')}
           >
-            {selectedSection === 'education' && (
+            {selectedSection && selectedSection.includes('education') && (
               <div className="absolute left-0 top-0 w-full flex justify-between items-center px-2 py-1 bg-blue-50 rounded-t-lg z-10">
                 <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onMoveSection && onMoveSection('education', 'up'); }} title="Move" className="cursor-pointer"><DotsHorizontalIcon /></Button>
                 <span className="flex gap-2">
@@ -205,6 +210,37 @@ export default function ClassicTemplate({ data, styling, selectedSection, setSel
             </section>
           </div>
         )}
+
+        {/* Custom Sections */}
+        {data.customSections && data.customSections.map((section) => (
+          <div
+            key={section.id}
+            className={selectedSection && selectedSection.includes(section.name.toLowerCase()) ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
+            style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
+            onClick={() => setSelectedSection && setSelectedSection(section.name.toLowerCase())}
+          >
+            {selectedSection && selectedSection.includes(section.name.toLowerCase()) && (
+              <div className="absolute left-0 top-0 w-full flex justify-between items-center px-2 py-1 bg-blue-50 rounded-t-lg z-10">
+                <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onMoveSection && onMoveSection(section.name.toLowerCase(), 'up'); }} title="Move" className="cursor-pointer"><DotsHorizontalIcon /></Button>
+                <span className="flex gap-2">
+                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onEditSection && onEditSection(section.name.toLowerCase()); }} title="Edit" className="cursor-pointer"><Pencil1Icon /></Button>
+                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection(section.name.toLowerCase()); }} title="Delete" className="cursor-pointer"><TrashIcon /></Button>
+                </span>
+              </div>
+            )}
+            <section>
+              <h2 
+                className={`font-bold mb-3 ${styling.primaryColor.replace('bg-', 'text-')}`}
+                style={{ fontSize: styling.headingSize }}
+              >
+                {section.name.toUpperCase()}
+              </h2>
+              <div style={{ marginBottom: styling.paragraphSpacing }}>
+                <p className="text-gray-700">{section.content}</p>
+              </div>
+            </section>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -16,7 +16,6 @@ import {
 } from "../../components/templates";
 import { ResumeData, TemplateStyling, TemplateConfig } from "../../components/types";
 import ZoomController from "../../components/ZoomController";
-import Button from "../../Button";
 
 const COLORS = [
   { name: "Red", value: "bg-red-600", text: "text-red-600" },
@@ -129,6 +128,7 @@ export default function ResumeEditor() {
         year: "2022",
       },
     ],
+    customSections: [],
   });
 
   // Calculate preview style
@@ -151,7 +151,19 @@ export default function ResumeEditor() {
 
   const handleAddSection = () => {
     if (newSection.trim()) {
+      const newSectionId = Date.now().toString();
       setSections([...sections, { id: Date.now(), name: newSection.trim() }]);
+      setResumeData({
+        ...resumeData,
+        customSections: [
+          ...(resumeData.customSections || []),
+          {
+            id: newSectionId,
+            name: newSection.trim(),
+            content: "Add your content here...",
+          },
+        ],
+      });
       setNewSection("");
     }
   };
@@ -165,7 +177,18 @@ export default function ResumeEditor() {
     setEditingValue("");
   };
   const handleRemoveSection = (id: number) => {
+    const sectionToRemove = sections.find(s => s.id === id);
     setSections(sections.filter((s) => s.id !== id));
+    
+    // Also remove from customSections if it exists
+    if (sectionToRemove && resumeData.customSections) {
+      setResumeData({
+        ...resumeData,
+        customSections: resumeData.customSections.filter(
+          cs => cs.name !== sectionToRemove.name
+        ),
+      });
+    }
   };
 
   // Trigger spell check when Spell tab is activated
@@ -595,6 +618,37 @@ export default function ResumeEditor() {
                       </div>
                     );
                   }
+                  // Handle custom sections
+                  const customSection = resumeData.customSections?.find(cs => 
+                    cs.name.toLowerCase() === section.name.toLowerCase()
+                  );
+                  if (customSection) {
+                    return (
+                      <div className="mt-4">
+                        <label className="block text-xs font-semibold mb-1">Edit {section.name}</label>
+                        <textarea
+                          className="border rounded px-2 py-1 w-full text-sm"
+                          rows={4}
+                          value={customSection.content}
+                          onChange={e => {
+                            const updated = (resumeData.customSections || []).map(cs => 
+                              cs.id === customSection.id 
+                                ? { ...cs, content: e.target.value }
+                                : cs
+                            );
+                            setResumeData({ ...resumeData, customSections: updated });
+                          }}
+                          placeholder={`Enter your ${section.name} content here...`}
+                        />
+                        <button
+                          className="mt-2 px-2 py-1 bg-blue-600 text-white rounded text-xs float-right"
+                          onClick={() => setSelectedSectionId(null)}
+                        >
+                          Done
+                        </button>
+                      </div>
+                    );
+                  }
                   return null;
                 })()}
               </div>
@@ -832,6 +886,9 @@ export default function ResumeEditor() {
                   const sec = sections.find(s => s.name.toLowerCase() === section.toLowerCase());
                   if (sec) setSelectedSectionId(sec.id);
                 }}
+                onEditSection={handlePreviewSectionEdit}
+                onDeleteSection={handlePreviewSectionDelete}
+                onMoveSection={handlePreviewSectionMove}
               />;
             })()}
           </div>

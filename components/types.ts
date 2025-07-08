@@ -16,6 +16,11 @@ export interface ResumeData {
     institution: string;
     year: string;
   }>;
+  customSections?: Array<{
+    id: string;
+    name: string;
+    content: string;
+  }>;
 }
 
 export interface TemplateStyling {
@@ -31,6 +36,14 @@ export interface TemplateStyling {
 export interface TemplateConfig {
   id: string;
   name: string;
-  component: React.ComponentType<{ data: ResumeData; styling: TemplateStyling }>;
+  component: React.ComponentType<{ 
+    data: ResumeData; 
+    styling: TemplateStyling;
+    selectedSection?: string | null;
+    setSelectedSection?: (section: string) => void;
+    onEditSection?: (section: string) => void;
+    onDeleteSection?: (section: string) => void;
+    onMoveSection?: (section: string, direction: 'up' | 'down') => void;
+  }>;
   preview: string;
 } 
