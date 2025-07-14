@@ -26,6 +26,7 @@ interface TemplateProps {
       name: string;
       content: string;
     }>;
+    certifications?: string[];
   };
   styling: {
     primaryColor: string;
@@ -41,9 +42,10 @@ interface TemplateProps {
   onEditSection?: (section: string) => void;
   onDeleteSection?: (section: string) => void;
   onMoveSection?: (section: string, direction: 'up' | 'down') => void;
+  onEditHeader?: () => void;
 }
 
-export default function ClassicTemplate({ data, styling, selectedSection, setSelectedSection, onEditSection, onDeleteSection, onMoveSection }: TemplateProps) {
+export default function ClassicTemplate({ data, styling, selectedSection, setSelectedSection, onEditSection, onDeleteSection, onMoveSection, onEditHeader }: TemplateProps) {
   return (
     <div 
       className="bg-white w-full min-h-[800px] shadow-xl"
@@ -54,17 +56,12 @@ export default function ClassicTemplate({ data, styling, selectedSection, setSel
       }}
     >
       {/* Header */}
-      <div className={`${styling.primaryColor} text-white px-8 py-6`}>
-        <div className="text-center">
-          <h1 
-            className="text-3xl font-bold mb-2"
-            style={{ fontSize: styling.headingSize + 4 }}
-          >
-            {data.name}
-          </h1>
-          <p className="text-lg">{data.email}</p>
-          {data.phone && <p className="text-sm">{data.phone}</p>}
-          {data.address && <p className="text-sm">{data.address}</p>}
+      <div className="bg-white pt-10 pb-4 px-8 border-b-2 border-gray-300 text-center" style={{ fontFamily: 'Georgia, Times New Roman, serif' }}>
+        <h1 className="text-5xl font-bold mb-2 tracking-wide" style={{ color: '#222', fontSize: styling.headingSize + 12 }}>{data.name}</h1>
+        <div className="text-base text-gray-700 font-medium flex flex-col items-center gap-1">
+          <span>Email: {data.email}</span>
+          {data.phone && <span>Phone: {data.phone}</span>}
+          {data.address && <span>Address: {data.address}</span>}
         </div>
       </div>
 
@@ -73,19 +70,15 @@ export default function ClassicTemplate({ data, styling, selectedSection, setSel
         {/* Summary */}
         {data.summary && (
           <div
-            className={selectedSection && selectedSection.includes('summary') ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
+            className={'group relative rounded-lg'}
             style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
             onClick={() => setSelectedSection && setSelectedSection('summary')}
           >
-            {selectedSection && selectedSection.includes('summary') && (
-              <div className="absolute left-0 top-0 w-full flex justify-between items-center px-2 py-1 bg-blue-50 rounded-t-lg z-10">
-                <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onMoveSection && onMoveSection('summary', 'up'); }} title="Move" className="cursor-pointer"><DotsHorizontalIcon /></Button>
-                <span className="flex gap-2">
-                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onEditSection && onEditSection('summary'); }} title="Edit" className="cursor-pointer"><Pencil1Icon /></Button>
-                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection('summary'); }} title="Delete" className="cursor-pointer"><TrashIcon /></Button>
-                </span>
-              </div>
-            )}
+            <div className="absolute right-2 top-2 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={e => { e.stopPropagation(); onEditSection && onEditSection('summary'); }} title="Edit"><Pencil1Icon className="w-4 h-4" /></button>
+              <button onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection('summary'); }} title="Delete"><TrashIcon className="w-4 h-4" /></button>
+            </div>
+            <div className="pointer-events-none absolute inset-0 rounded-lg border-2 border-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <section>
               <h2 
                 className={`font-bold mb-3 ${styling.primaryColor.replace('bg-', 'text-')}`}
@@ -103,19 +96,15 @@ export default function ClassicTemplate({ data, styling, selectedSection, setSel
         {/* Skills */}
         {data.skills && data.skills.length > 0 && (
           <div
-            className={selectedSection && selectedSection.includes('skill') ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
+            className={'group relative rounded-lg' + ''}
             style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
             onClick={() => setSelectedSection && setSelectedSection('skills')}
           >
-            {selectedSection && selectedSection.includes('skill') && (
-              <div className="absolute left-0 top-0 w-full flex justify-between items-center px-2 py-1 bg-blue-50 rounded-t-lg z-10">
-                <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onMoveSection && onMoveSection('skills', 'up'); }} title="Move" className="cursor-pointer"><DotsHorizontalIcon /></Button>
-                <span className="flex gap-2">
-                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onEditSection && onEditSection('skills'); }} title="Edit" className="cursor-pointer"><Pencil1Icon /></Button>
-                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection('skills'); }} title="Delete" className="cursor-pointer"><TrashIcon /></Button>
-                </span>
-              </div>
-            )}
+            <div className="absolute right-2 top-2 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={e => { e.stopPropagation(); onEditSection && onEditSection('skills'); }} title="Edit"><Pencil1Icon className="w-4 h-4" /></button>
+              <button onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection('skills'); }} title="Delete"><TrashIcon className="w-4 h-4" /></button>
+            </div>
+            <div className="pointer-events-none absolute inset-0 rounded-lg border-2 border-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <section>
               <h2 
                 className={`font-bold mb-3 ${styling.primaryColor.replace('bg-', 'text-')}`}
@@ -133,19 +122,15 @@ export default function ClassicTemplate({ data, styling, selectedSection, setSel
         {/* Experience */}
         {data.experience && data.experience.length > 0 && (
           <div
-            className={selectedSection && selectedSection.includes('experience') ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
+            className={'group relative rounded-lg' + ''}
             style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
             onClick={() => setSelectedSection && setSelectedSection('experience')}
           >
-            {selectedSection && selectedSection.includes('experience') && (
-              <div className="absolute left-0 top-0 w-full flex justify-between items-center px-2 py-1 bg-blue-50 rounded-t-lg z-10">
-                <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onMoveSection && onMoveSection('experience', 'up'); }} title="Move" className="cursor-pointer"><DotsHorizontalIcon /></Button>
-                <span className="flex gap-2">
-                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onEditSection && onEditSection('experience'); }} title="Edit" className="cursor-pointer"><Pencil1Icon /></Button>
-                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection('experience'); }} title="Delete" className="cursor-pointer"><TrashIcon /></Button>
-                </span>
-              </div>
-            )}
+            <div className="absolute right-2 top-2 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={e => { e.stopPropagation(); onEditSection && onEditSection('experience'); }} title="Edit"><Pencil1Icon className="w-4 h-4" /></button>
+              <button onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection('experience'); }} title="Delete"><TrashIcon className="w-4 h-4" /></button>
+            </div>
+            <div className="pointer-events-none absolute inset-0 rounded-lg border-2 border-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <section>
               <h2 
                 className={`font-bold mb-3 ${styling.primaryColor.replace('bg-', 'text-')}`}
@@ -175,59 +160,55 @@ export default function ClassicTemplate({ data, styling, selectedSection, setSel
 
         {/* Education */}
         {data.education && data.education.length > 0 && (
-          <div
-            className={selectedSection && selectedSection.includes('education') ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
-            style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
-            onClick={() => setSelectedSection && setSelectedSection('education')}
-          >
-            {selectedSection && selectedSection.includes('education') && (
-              <div className="absolute left-0 top-0 w-full flex justify-between items-center px-2 py-1 bg-blue-50 rounded-t-lg z-10">
-                <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onMoveSection && onMoveSection('education', 'up'); }} title="Move" className="cursor-pointer"><DotsHorizontalIcon /></Button>
-                <span className="flex gap-2">
-                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onEditSection && onEditSection('education'); }} title="Edit" className="cursor-pointer"><Pencil1Icon /></Button>
-                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection('education'); }} title="Delete" className="cursor-pointer"><TrashIcon /></Button>
-                </span>
-              </div>
-            )}
-            <section>
-              <h2 
-                className={`font-bold mb-3 ${styling.primaryColor.replace('bg-', 'text-')}`}
-                style={{ fontSize: styling.headingSize }}
-              >
-                EDUCATION
-              </h2>
-              <div style={{ gap: styling.paragraphSpacing, display: 'flex', flexDirection: 'column' }}>
-                {data.education.map((edu, index) => (
-                  <div key={index} style={{ marginBottom: styling.paragraphSpacing }}>
-                    <div className="flex justify-between items-start mb-1">
-                      <h3 className="font-semibold text-gray-800">{edu.degree}</h3>
-                      <span className="text-sm text-gray-600">{edu.year}</span>
-                    </div>
-                    <p className="text-gray-600">{edu.institution}</p>
-                  </div>
+          <section style={{ marginBottom: styling.sectionSpacing }}>
+            <h2 
+              className={`font-bold mb-3 ${styling.primaryColor.replace('bg-', 'text-')}`}
+              style={{ fontSize: styling.headingSize }}
+            >
+              EDUCATION
+            </h2>
+            <div style={{ marginBottom: styling.paragraphSpacing }}>
+              {data.education.map((edu, idx) => (
+                <div key={idx} className="mb-2">
+                  <div className="font-semibold text-gray-800">{edu.degree}</div>
+                  <div className="text-gray-600">{edu.institution} | {edu.year}</div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+        {/* Certifications */}
+        {data.certifications && data.certifications.length > 0 && (
+          <section style={{ marginBottom: styling.sectionSpacing }}>
+            <h2 
+              className={`font-bold mb-3 ${styling.primaryColor.replace('bg-', 'text-')}`}
+              style={{ fontSize: styling.headingSize }}
+            >
+              CERTIFICATIONS
+            </h2>
+            <div style={{ marginBottom: styling.paragraphSpacing }}>
+              <ul className="list-disc list-inside text-gray-700">
+                {data.certifications.map((cert, idx) => (
+                  <li key={idx}>{cert}</li>
                 ))}
-              </div>
-            </section>
-          </div>
+              </ul>
+            </div>
+          </section>
         )}
 
         {/* Custom Sections */}
         {data.customSections && data.customSections.map((section) => (
           <div
             key={section.id}
-            className={selectedSection && selectedSection.includes(section.name.toLowerCase()) ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
+            className={'group relative rounded-lg' + ''}
             style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
             onClick={() => setSelectedSection && setSelectedSection(section.name.toLowerCase())}
           >
-            {selectedSection && selectedSection.includes(section.name.toLowerCase()) && (
-              <div className="absolute left-0 top-0 w-full flex justify-between items-center px-2 py-1 bg-blue-50 rounded-t-lg z-10">
-                <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onMoveSection && onMoveSection(section.name.toLowerCase(), 'up'); }} title="Move" className="cursor-pointer"><DotsHorizontalIcon /></Button>
-                <span className="flex gap-2">
-                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onEditSection && onEditSection(section.name.toLowerCase()); }} title="Edit" className="cursor-pointer"><Pencil1Icon /></Button>
-                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection(section.name.toLowerCase()); }} title="Delete" className="cursor-pointer"><TrashIcon /></Button>
-                </span>
-              </div>
-            )}
+            <div className="absolute right-2 top-2 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={e => { e.stopPropagation(); onEditSection && onEditSection(section.name.toLowerCase()); }} title="Edit"><Pencil1Icon className="w-4 h-4" /></button>
+              <button onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection(section.id); }} title="Delete"><TrashIcon className="w-4 h-4" /></button>
+            </div>
+            <div className="pointer-events-none absolute inset-0 rounded-lg border-2 border-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <section>
               <h2 
                 className={`font-bold mb-3 ${styling.primaryColor.replace('bg-', 'text-')}`}

@@ -1,26 +1,29 @@
+export interface CustomSection {
+  id: string;
+  name: string;
+  content: string;
+}
+
 export interface ResumeData {
   name: string;
   email: string;
-  phone?: string;
-  address?: string;
-  summary?: string;
-  skills?: string[];
-  experience?: Array<{
+  phone: string;
+  address: string;
+  summary: string;
+  skills: string[];
+  experience: Array<{
     title: string;
     company: string;
     duration: string;
     description: string[];
   }>;
-  education?: Array<{
+  education: Array<{
     degree: string;
     institution: string;
     year: string;
   }>;
-  customSections?: Array<{
-    id: string;
-    name: string;
-    content: string;
-  }>;
+  customSections: CustomSection[];
+  certifications?: string[];
 }
 
 export interface TemplateStyling {
@@ -44,6 +47,7 @@ export interface TemplateConfig {
     onEditSection?: (section: string) => void;
     onDeleteSection?: (section: string) => void;
     onMoveSection?: (section: string, direction: 'up' | 'down') => void;
+    onEditHeader?: () => void;
   }>;
   preview: string;
 } 

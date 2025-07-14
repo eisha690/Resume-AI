@@ -39,9 +39,10 @@ interface TemplateProps {
   onEditSection?: (section: string) => void;
   onDeleteSection?: (section: string) => void;
   onMoveSection?: (section: string, direction: 'up' | 'down') => void;
+  onEditHeader?: () => void;
 }
 
-export default function ProfessionalTemplate({ data, styling, selectedSection, setSelectedSection, onEditSection, onDeleteSection, onMoveSection }: TemplateProps) {
+export default function ProfessionalTemplate({ data, styling, selectedSection, setSelectedSection, onEditSection, onDeleteSection, onMoveSection, onEditHeader }: TemplateProps) {
   return (
     <div 
       className="bg-white w-full min-h-[800px] shadow-xl rounded-xl border-2 border-green-300"
@@ -52,37 +53,12 @@ export default function ProfessionalTemplate({ data, styling, selectedSection, s
       }}
     >
       {/* Header */}
-      <div className={`${styling.primaryColor} text-white px-8 py-8 rounded-t-xl`}>
-        <div className="flex items-center gap-8">
-          <div className={`w-20 h-20 bg-white ${styling.primaryColor.replace('bg-', 'text-')} font-bold text-3xl flex items-center justify-center rounded-lg shadow-lg`}>
-            {data.name.split(' ').map(n => n[0]).join('')}
-          </div>
-          <div className="flex-1">
-            <h1 
-              className="text-4xl font-bold mb-3"
-              style={{ fontSize: styling.headingSize + 6 }}
-            >
-              {data.name}
-            </h1>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="font-semibold mb-1">Email</p>
-                <p className="opacity-90">{data.email}</p>
-              </div>
-              {data.phone && (
-                <div>
-                  <p className="font-semibold mb-1">Phone</p>
-                  <p className="opacity-90">{data.phone}</p>
-                </div>
-              )}
-              {data.address && (
-                <div className="col-span-2">
-                  <p className="font-semibold mb-1">Address</p>
-                  <p className="opacity-90">{data.address}</p>
-                </div>
-              )}
-            </div>
-          </div>
+      <div className="bg-gray-100 px-10 py-8 border-b-2 border-gray-300 rounded-t-xl">
+        <h1 className="text-4xl font-bold mb-2 tracking-wide" style={{ color: '#222', fontSize: styling.headingSize + 8 }}>{data.name}</h1>
+        <div className="flex flex-wrap gap-8 text-base font-medium text-gray-700">
+          <span>Email: {data.email}</span>
+          {data.phone && <span>Phone: {data.phone}</span>}
+          {data.address && <span>Address: {data.address}</span>}
         </div>
       </div>
 
@@ -201,17 +177,30 @@ export default function ProfessionalTemplate({ data, styling, selectedSection, s
 
         {/* Custom Sections */}
         {data.customSections && data.customSections.map((section) => (
-          <section key={section.id} style={{ marginBottom: styling.sectionSpacing }}>
-            <h2 
-              className={`font-bold mb-4 ${styling.primaryColor.replace('bg-', 'text-')} border-b-2 border-green-200 pb-2`}
-              style={{ fontSize: styling.headingSize }}
-            >
-              {section.name.toUpperCase()}
-            </h2>
-            <div style={{ marginBottom: styling.paragraphSpacing }}>
-              <p className="text-gray-700 leading-relaxed">{section.content}</p>
-            </div>
-          </section>
+          <div
+            key={section.id}
+            className={selectedSection && selectedSection.includes(section.name.toLowerCase()) ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
+            style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
+            onClick={() => setSelectedSection && setSelectedSection(section.name.toLowerCase())}
+          >
+            {selectedSection && selectedSection.includes(section.name.toLowerCase()) && (
+              <div className="absolute right-2 top-2 flex gap-2 z-10">
+                <button onClick={e => { e.stopPropagation(); onEditSection && onEditSection(section.name.toLowerCase()); }} title="Edit">✏️</button>
+                <button onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection(section.id); }} title="Delete">🗑️</button>
+              </div>
+            )}
+            <section>
+              <h2 
+                className={`font-bold mb-4 ${styling.primaryColor.replace('bg-', 'text-')} border-b-2 border-green-200 pb-2`}
+                style={{ fontSize: styling.headingSize }}
+              >
+                {section.name.toUpperCase()}
+              </h2>
+              <div style={{ marginBottom: styling.paragraphSpacing }}>
+                <p className="text-gray-700 leading-relaxed">{section.content}</p>
+              </div>
+            </section>
+          </div>
         ))}
       </div>
     </div>

@@ -1,8 +1,22 @@
+"use client";
+
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 export default function Login() {
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const user = localStorage.getItem('resumeai_user');
+      if (user) {
+        router.replace('/dashboard');
+      }
+    }
+  }, [router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -28,13 +42,19 @@ export default function Login() {
               <p className="mb-6 text-gray-500">Sign Up to Get Started</p>
               <form className="space-y-4" onSubmit={(e) => {
                 e.preventDefault();
-                router.push('/resume-editor');
+                if(email) {
+                  localStorage.setItem('resumeai_user', email);
+                }
+                router.push('/dashboard');
               }}>
                 <div>
                   <input
                     type="email"
                     placeholder="Email Address"
                     className="w-full px-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
                   />
                 </div>
                 <div>
@@ -42,6 +62,9 @@ export default function Login() {
                     type="password"
                     placeholder="Password"
                     className="w-full px-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    required
                   />
                 </div>
                 <button

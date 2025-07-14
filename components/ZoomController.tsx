@@ -5,10 +5,11 @@ interface ZoomControllerProps {
   setZoom: (z: number) => void;
   fitToWidth: boolean;
   setFitToWidth: (v: boolean) => void;
+  onFitToWidthToggle: () => void;
   style?: React.CSSProperties; // Allow style override
 }
 
-export default function ZoomController({ zoom, setZoom, fitToWidth, setFitToWidth, style }: ZoomControllerProps) {
+export default function ZoomController({ zoom, setZoom, fitToWidth, setFitToWidth, style, onFitToWidthToggle }: ZoomControllerProps) {
   // Clamp zoom between 0.5 and 2
   const minZoom = 0.5;
   const maxZoom = 2;
@@ -17,7 +18,6 @@ export default function ZoomController({ zoom, setZoom, fitToWidth, setFitToWidt
   const handleZoomIn = () => setZoom(Math.min(maxZoom, +(zoom + step).toFixed(2)));
   const handleZoomOut = () => setZoom(Math.max(minZoom, +(zoom - step).toFixed(2)));
   const handleSlider = (e: React.ChangeEvent<HTMLInputElement>) => setZoom(Number(e.target.value));
-  const handleFitToggle = () => setFitToWidth(!fitToWidth);
 
   return (
     <div
@@ -26,7 +26,7 @@ export default function ZoomController({ zoom, setZoom, fitToWidth, setFitToWidt
     >
       {/* Fit-to-width/Reset button */}
       <button
-        onClick={handleFitToggle}
+        onClick={onFitToWidthToggle}
         className={`w-8 h-8 flex items-center justify-center rounded-full border-2 ${fitToWidth ? 'bg-blue-100 border-blue-500' : 'bg-gray-100 border-gray-300'} hover:bg-blue-200 transition mb-1`}
         title={fitToWidth ? 'Reset Zoom' : 'Fit to Width'}
       >

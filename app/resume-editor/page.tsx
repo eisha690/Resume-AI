@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Squares2X2Icon,
   ListBulletIcon,
@@ -16,6 +16,8 @@ import {
 } from "../../components/templates";
 import { ResumeData, TemplateStyling, TemplateConfig } from "../../components/types";
 import ZoomController from "../../components/ZoomController";
+import { Dialog } from "@headlessui/react";
+import { useRouter } from "next/navigation";
 
 const COLORS = [
   { name: "Red", value: "bg-red-600", text: "text-red-600" },
@@ -39,10 +41,10 @@ const TEMPLATES: TemplateConfig[] = [
 const FONT_STYLES = ["Arial", "Times New Roman", "Roboto", "Georgia", "Montserrat", "Inter"];
 
 const DEFAULT_SECTIONS = [
-  { id: 1, name: "Summary" },
-  { id: 2, name: "Skills" },
-  { id: 3, name: "Experience" },
-  { id: 4, name: "Education and Training" },
+  { id: "summary", name: "Summary" },
+  { id: "skills", name: "Skills" },
+  { id: "experience", name: "Experience" },
+  { id: "education", name: "Education" }, // Fix name to match template logic
 ];
 
 const SIDEBAR_TABS = [
@@ -55,10 +57,11 @@ const SIDEBAR_TABS = [
 export default function ResumeEditor() {
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
   const [selectedTemplate, setSelectedTemplate] = useState(TEMPLATES[0]);
+  const [hoveredTemplate, setHoveredTemplate] = useState<TemplateConfig | null>(null);
   const [activeTab, setActiveTab] = useState("templates");
   const [sections, setSections] = useState(DEFAULT_SECTIONS);
   const [newSection, setNewSection] = useState("");
-  const [editingSection, setEditingSection] = useState<number | null>(null);
+  const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
   const [fontStyle, setFontStyle] = useState(FONT_STYLES[0]);
   const [fontSize, setFontSize] = useState(18);
@@ -68,22 +71,28 @@ export default function ResumeEditor() {
   const [lineSpacing, setLineSpacing] = useState(1.2);
   const [zoom, setZoom] = useState(1);
   const [fitToWidth, setFitToWidth] = useState(false);
-  const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
-  const [sectionFonts, setSectionFonts] = useState<{ [key: number]: string }>(
+  const [prevZoom, setPrevZoom] = useState(1); // Store previous zoom for toggling
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [sectionFonts, setSectionFonts] = useState<{ [key: string]: string }>(
     () => Object.fromEntries(DEFAULT_SECTIONS.map((s) => [s.id, FONT_STYLES[0]]))
   );
   const [spellCheckStatus, setSpellCheckStatus] = useState<'idle' | 'checking' | 'done'>("idle");
   const [spellCheckProgress, setSpellCheckProgress] = useState(0);
   const [spellCheckResult, setSpellCheckResult] = useState<{ section: string; error: string }[]>([]);
   const [selectedPreviewSection, setSelectedPreviewSection] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState<null | string>(null); // section name/id
+  const [modalDraft, setModalDraft] = useState<any>({});
+  const router = useRouter();
+  const [deletedSectionIds, setDeletedSectionIds] = useState<string[]>([]);
+  // Add state for header modal and header fields
+  // Remove headerModalOpen, headerDraft, setHeaderModalOpen, setHeaderDraft, handleEditHeader, handleSaveHeader related to modal
 
   const [resumeData, setResumeData] = useState<ResumeData>({
     name: "FIRST NAME SURNAME",
     email: "sherazzafar148@gmail.com",
     phone: "+1 (555) 123-4567",
     address: "123 Main Street, City, State 12345",
-    summary:
-      "Experienced software developer with 5+ years of expertise in full-stack development, specializing in React, Node.js, and cloud technologies. Proven track record of delivering scalable solutions and leading development teams.",
+    summary: "Experienced software developer with 5+ years of expertise in full-stack development, specializing in React, Node.js, and cloud technologies. Proven track record of delivering scalable solutions and leading development teams.",
     skills: [
       "JavaScript",
       "React",
@@ -131,6 +140,92 @@ export default function ResumeEditor() {
     customSections: [],
   });
 
+  // Load from localStorage on mount
+  useEffect(() => {
+    const summary = localStorage.getItem('resume_summary');
+    const skills = localStorage.getItem('resume_skills');
+    const experience = localStorage.getItem('resume_experience');
+    const education = localStorage.getItem('resume_education');
+    const certifications = localStorage.getItem('resume_certifications');
+    const customSections = localStorage.getItem('resume_customSections');
+    setResumeData(prev => ({
+      ...prev,
+      summary: summary && summary.trim().length > 0 ? summary : "Experienced software developer with 5+ years of expertise in full-stack development, specializing in React, Node.js, and cloud technologies. Proven track record of delivering scalable solutions and leading development teams.",
+      skills: skills && JSON.parse(skills).length > 0 ? JSON.parse(skills) : [
+        "JavaScript",
+        "React",
+        "Node.js",
+        "Python",
+        "AWS",
+        "Docker",
+        "Git",
+        "TypeScript",
+      ],
+      experience: experience ? JSON.parse(experience) : prev.experience,
+      education: education ? JSON.parse(education) : prev.education,
+      certifications: certifications ? JSON.parse(certifications) : [],
+      customSections: customSections ? JSON.parse(customSections) : prev.customSections,
+    }));
+  }, []);
+
+  // Listen for localStorage changes to update all resume fields in real time
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (
+        !event.key ||
+        [
+          "resume_name",
+          "resume_email",
+          "resume_phone",
+          "resume_address",
+          "resume_summary",
+          "resume_skills",
+          "resume_experience",
+          "resume_education",
+          "resume_certifications",
+          "resume_customSections"
+        ].includes(event.key)
+      ) {
+        setResumeData(prev => ({
+          ...prev,
+          name: localStorage.getItem("resume_name") || prev.name,
+          email: localStorage.getItem("resume_email") || prev.email,
+          phone: localStorage.getItem("resume_phone") || prev.phone,
+          address: localStorage.getItem("resume_address") || prev.address,
+          summary: localStorage.getItem("resume_summary") || prev.summary,
+          skills: JSON.parse(localStorage.getItem("resume_skills") || '[]'),
+          experience: JSON.parse(localStorage.getItem("resume_experience") || '[]'),
+          education: JSON.parse(localStorage.getItem("resume_education") || '[]'),
+          certifications: JSON.parse(localStorage.getItem("resume_certifications") || '[]'),
+          customSections: JSON.parse(localStorage.getItem("resume_customSections") || '[]'),
+        }));
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  // Sync sections with DEFAULT_SECTIONS + custom sections (never remove default sections)
+  useEffect(() => {
+    // Always include all default sections, even if deletedSectionIds me hain
+    // Remove any accidental duplicate default sections from customSections
+    const customSections = (resumeData.customSections || []).filter(cs => !deletedSectionIds.includes(cs.id));
+    const filteredCustomSections = customSections.filter(
+      cs => !["summary", "skills", "experience", "education"].includes(cs.name.toLowerCase())
+    );
+    // Ensure default sections are always present (by id and name)
+    setSections(prevSections => {
+      // Remove any accidental custom section with default section name
+      const defaultSectionNames = DEFAULT_SECTIONS.map(ds => ds.name.toLowerCase());
+      const filtered = filteredCustomSections.filter(cs => !defaultSectionNames.includes(cs.name.toLowerCase()));
+      // Always return all default sections + filtered custom
+      return [
+        ...DEFAULT_SECTIONS,
+        ...filtered
+      ];
+    });
+  }, [resumeData.customSections, deletedSectionIds]);
+
   // Calculate preview style
   const previewRef = React.useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -140,7 +235,8 @@ export default function ResumeEditor() {
       const parent = previewRef.current.parentElement;
       if (parent) {
         // 700px is the base width of the preview
-        setZoom(Math.max(0.5, Math.min(2, parent.clientWidth / 700)));
+        const newZoom = Math.max(0.5, Math.min(2, parent.clientWidth / 700));
+        setZoom(newZoom);
       }
     }
   }, [fitToWidth]);
@@ -149,45 +245,103 @@ export default function ResumeEditor() {
     if (!fitToWidth) setZoom((z) => Math.max(0.5, Math.min(2, z)));
   }, [fitToWidth]);
 
+  // Handler for toggling fit to width
+  const handleFitToWidthToggle = () => {
+    if (!fitToWidth) {
+      setPrevZoom(zoom); // Save current zoom before fitting
+      setFitToWidth(true);
+    } else {
+      setFitToWidth(false);
+      setZoom(Math.max(0.5, Math.min(2, prevZoom)));
+    }
+  };
+
   const handleAddSection = () => {
     if (newSection.trim()) {
-      const newSectionId = Date.now().toString();
-      setSections([...sections, { id: Date.now(), name: newSection.trim() }]);
+      const newSectionId = Date.now().toString(); // id as string
+      // Only update customSections in resumeData
       setResumeData({
         ...resumeData,
         customSections: [
           ...(resumeData.customSections || []),
           {
-            id: newSectionId,
+            id: newSectionId, // id as string
             name: newSection.trim(),
             content: "Add your content here...",
           },
         ],
       });
+      // sections ko yahan update na karein, useEffect se ho jaayega
+      try {
+        const stored = localStorage.getItem('resume_customSections');
+        let customSections = stored ? JSON.parse(stored) : [];
+        customSections.push({
+          id: newSectionId,
+          name: newSection.trim(),
+          content: "Add your content here...",
+        });
+        localStorage.setItem('resume_customSections', JSON.stringify(customSections));
+      } catch {}
       setNewSection("");
     }
   };
-  const handleEditSection = (id: number, name: string) => {
+  const handleEditSection = (id: string, name: string) => {
     setEditingSection(id);
     setEditingValue(name);
   };
-  const handleSaveEditSection = (id: number) => {
+  const handleSaveEditSection = (id: string) => {
     setSections(sections.map((s) => (s.id === id ? { ...s, name: editingValue } : s)));
+    
+    // Also update the customSections if this is a custom section
+    if (resumeData.customSections) {
+      const updatedCustomSections = resumeData.customSections.map(cs => 
+        cs.id === id ? { ...cs, name: editingValue } : cs
+      );
+      setResumeData({
+        ...resumeData,
+        customSections: updatedCustomSections,
+      });
+      
+      // Update localStorage as well
+      try {
+        const stored = localStorage.getItem('resume_customSections');
+        let customSections = stored ? JSON.parse(stored) : [];
+        customSections = customSections.map((cs: any) => 
+          cs.id === id ? { ...cs, name: editingValue } : cs
+        );
+        localStorage.setItem('resume_customSections', JSON.stringify(customSections));
+      } catch {}
+    }
+    
     setEditingSection(null);
     setEditingValue("");
   };
-  const handleRemoveSection = (id: number) => {
+  const handleRemoveSection = (id: string) => {
     const sectionToRemove = sections.find(s => s.id === id);
-    setSections(sections.filter((s) => s.id !== id));
-    
-    // Also remove from customSections if it exists
+    // Prevent deleting default sections by id or name
+    if (
+      sectionToRemove &&
+      ["summary", "skills", "experience", "education"].includes(sectionToRemove.name.toLowerCase())
+    ) {
+      return; // Do nothing for default sections
+    }
+    setDeletedSectionIds(prev => [...prev, id]);
+    // Only remove from customSections
     if (sectionToRemove && resumeData.customSections) {
+      const updatedCustomSections = resumeData.customSections.filter(cs => cs.id !== id);
       setResumeData({
         ...resumeData,
-        customSections: resumeData.customSections.filter(
-          cs => cs.name !== sectionToRemove.name
-        ),
+        customSections: updatedCustomSections,
       });
+      // Remove from localStorage as well
+      try {
+        const stored = localStorage.getItem('resume_customSections');
+        let customSections = stored ? JSON.parse(stored) : [];
+        customSections = customSections.filter((cs:any) => cs.id !== id);
+        localStorage.setItem('resume_customSections', JSON.stringify(customSections));
+      } catch (error) {
+        console.error('Error updating localStorage for custom sections:', error);
+      }
     }
   };
 
@@ -219,16 +373,54 @@ export default function ResumeEditor() {
     }
   }, [activeTab]);
 
+  // Update: Robustly match section for preview edit/delete (by id or name, case-insensitive)
   const handlePreviewSectionEdit = (section: string) => {
-    // Optionally, open the sidebar editor for this section
-    setSelectedSectionId(
-      sections.find(s => s.name.toLowerCase().includes(section.toLowerCase()))?.id || null
-    );
+    let sec = sections.find(s => s.id === section) || sections.find(s => s.name.toLowerCase() === section.toLowerCase());
+    if (!sec) return;
+    const name = sec.name.toLowerCase();
+    if (name.includes("experience")) {
+      router.push("/resume-editor/edit-section");
+      return;
+    }
+    if (name.includes("education")) {
+      router.push("/resume-editor/edit-section/education");
+      return;
+    }
+    if (name.includes("skill")) {
+      router.push("/resume-editor/edit-section/skills");
+      return;
+    }
+    if (name.includes("summary")) {
+      router.push("/resume-editor/edit-section/summary");
+      return;
+    }
+    // Custom section: use id
+    if (sec.id) {
+      router.push(`/resume-editor/edit-section/custom/${sec.id}`);
+      return;
+    }
   };
   const handlePreviewSectionDelete = (section: string) => {
-    // Remove section from sidebar and preview
-    const sec = sections.find(s => s.name.toLowerCase().includes(section.toLowerCase()));
-    if (sec) handleRemoveSection(sec.id);
+    // Try to find the section by name in the sections array
+    let sec = sections.find(s => s.name.toLowerCase() === section.toLowerCase());
+    if (sec) {
+      handleRemoveSection(sec.id);
+      return;
+    }
+    // If not found in sections, try to find in customSections
+    const customSec = resumeData.customSections?.find(cs => 
+      cs.name.toLowerCase() === section.toLowerCase() || cs.id === section
+    );
+    if (customSec) {
+      handleRemoveSection(customSec.id);
+      return;
+    }
+    // If still not found, try to find by exact id match
+    sec = sections.find(s => s.id === section);
+    if (sec) {
+      handleRemoveSection(sec.id);
+      return;
+    }
   };
   const handlePreviewSectionMove = (section: string, direction: 'up' | 'down') => {
     const idx = sections.findIndex(s => s.name.toLowerCase().includes(section.toLowerCase()));
@@ -243,9 +435,53 @@ export default function ResumeEditor() {
     }
   };
 
+  // Handler to open header edit modal
+  const handleEditHeader = () => {
+    router.push('/resume-editor/edit-section/header');
+  };
+
+  // When rendering the preview, ensure that resumeData always has all default sections, even if empty
+  const getSafeResumeData = () => {
+    return {
+      ...resumeData,
+      summary: resumeData.summary && resumeData.summary.trim().length > 0
+        ? resumeData.summary
+        : "Experienced software developer with 5+ years of expertise in full-stack development, specializing in React, Node.js, and cloud technologies. Proven track record of delivering scalable solutions and leading development teams.",
+      skills: Array.isArray(resumeData.skills) && resumeData.skills.length > 0
+        ? resumeData.skills
+        : [
+            "JavaScript",
+            "React",
+            "Node.js",
+            "Python",
+            "AWS",
+            "Docker",
+            "Git",
+            "TypeScript",
+          ],
+      experience: Array.isArray(resumeData.experience) ? resumeData.experience : [],
+      education: Array.isArray(resumeData.education) ? resumeData.education : [],
+      customSections: Array.isArray(resumeData.customSections) ? resumeData.customSections : [],
+    };
+  };
+
+  useEffect(() => {
+    const loadHeaderFromLocalStorage = () => {
+      setResumeData(prev => ({
+        ...prev,
+        name: localStorage.getItem("resume_name") || prev.name,
+        email: localStorage.getItem("resume_email") || prev.email,
+        phone: localStorage.getItem("resume_phone") || prev.phone,
+        address: localStorage.getItem("resume_address") || prev.address,
+      }));
+    };
+    // Initial load
+    loadHeaderFromLocalStorage();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
-      <div className="flex items-center justify-between bg-white shadow px-8 py-4">
+      <div className="flex items-center justify-between bg-white shadow px-8 py-4 fixed top-0 left-0 right-0 z-50">
         <div className="flex items-center gap-4">
           <span className="font-bold text-xl">Resume Now.</span>
           <input
@@ -257,13 +493,12 @@ export default function ResumeEditor() {
         <div className="flex items-center gap-3">
           <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save & Next</button>
           <button className="px-3 py-1 border rounded">Download</button>
-          <button className="px-3 py-1 border rounded">Print</button>
-          <button className="px-3 py-1 border rounded">Email</button>
+          <button className="px-3 py-1 border rounded" onClick={() => router.push('/dashboard')}>Back to Dashboard</button>
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        <nav className="w-16 bg-white border-r flex flex-col items-center py-4 gap-2">
+      <div className="flex flex-1 mt-16">
+        <nav className="w-16 bg-white border-r flex flex-col items-center py-4 gap-2 fixed left-0 top-16 h-screen">
           {SIDEBAR_TABS.map((tab) => (
             <button
               key={tab.key}
@@ -281,7 +516,7 @@ export default function ResumeEditor() {
           ))}
         </nav>
 
-        <aside className="w-64 bg-white border-r flex flex-col p-0 overflow-y-auto">
+        <aside className="w-64 bg-white border-r flex flex-col p-0 overflow-y-auto fixed left-16 top-16 h-screen">
           <div className="flex-1 p-4">
             {activeTab === "templates" && (
               <div>
@@ -302,51 +537,62 @@ export default function ResumeEditor() {
                   ))}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 overflow-x-hidden pr-1">
-                  {TEMPLATES.map((tpl) => {
-                    const MiniTemplate = tpl.component;
-                    return (
-                      <div
-                        key={tpl.id}
-                        className={`overflow-hidden rounded border bg-white shadow cursor-pointer transition-all flex flex-col items-center justify-start ${
-                          selectedTemplate.id === tpl.id
-                            ? "border-blue-500 ring-2 ring-blue-200 shadow-md"
-                            : "border-gray-200 hover:border-blue-300"
-                        }`}
-                        title={tpl.name}
-                        onClick={() => setSelectedTemplate(tpl)}
-                      >
-                        <div className="w-[120px] h-[120px] bg-gray-50 relative overflow-hidden flex items-center justify-center">
-                          <div
-                            className="absolute top-0 left-0"
-                            style={{
-                              transform: "scale(0.17)",
-                              transformOrigin: "top left",
-                              width: "700px",
-                              height: "900px",
-                              pointerEvents: "none",
-                            }}
-                          >
-                            <MiniTemplate
-                              data={resumeData}
-                              styling={{
-                                primaryColor: selectedColor.value,
-                                fontFamily: fontStyle,
-                                fontSize: fontSize,
-                                headingSize: headingSize,
-                                sectionSpacing: sectionSpacing,
-                                paragraphSpacing: paragraphSpacing,
-                                lineSpacing: lineSpacing,
+                <div className="h-80 overflow-y-auto pr-1">
+                  <div className="grid grid-cols-2 gap-4">
+                    {TEMPLATES.map((tpl) => {
+                      const MiniTemplate = tpl.component;
+                      return (
+                        <div
+                          key={tpl.id}
+                          className={`overflow-hidden rounded border bg-white shadow cursor-pointer transition-all flex flex-col items-center justify-start ${
+                            selectedTemplate.id === tpl.id
+                              ? "border-blue-500 ring-2 ring-blue-200 shadow-md"
+                              : hoveredTemplate?.id === tpl.id
+                              ? "border-blue-400 ring-1 ring-blue-300 shadow-lg"
+                              : "border-gray-200 hover:border-blue-300"
+                          }`}
+                          title={tpl.name}
+                          onMouseEnter={() => setHoveredTemplate(tpl)}
+                          onMouseLeave={() => setHoveredTemplate(null)}
+                          onClick={() => setSelectedTemplate(tpl)}
+                        >
+                          <div className="w-[120px] h-[120px] bg-gray-50 relative overflow-hidden flex items-center justify-center p-3">
+                            <div
+                              className="absolute top-0 left-0"
+                              style={{
+                                transform: "scale(0.17)",
+                                transformOrigin: "top left",
+                                width: "700px",
+                                height: "900px",
+                                pointerEvents: "none",
                               }}
-                            />
+                            >
+                              <MiniTemplate
+                                data={resumeData}
+                                styling={{
+                                  primaryColor: selectedColor.value,
+                                  fontFamily: fontStyle,
+                                  fontSize: fontSize,
+                                  headingSize: headingSize,
+                                  sectionSpacing: sectionSpacing,
+                                  paragraphSpacing: paragraphSpacing,
+                                  lineSpacing: lineSpacing,
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <div className="text-[11px] text-center text-gray-700 font-medium truncate w-full p-1">
+                            {tpl.name}
+                            {hoveredTemplate?.id === tpl.id && hoveredTemplate.id !== selectedTemplate.id && (
+                              <div className="text-[9px] text-blue-600 font-semibold mt-1">
+                                Previewing...
+                              </div>
+                            )}
                           </div>
                         </div>
-                        <div className="text-[11px] text-center text-gray-700 font-medium truncate w-full p-1">
-                          {tpl.name}
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}
@@ -354,17 +600,18 @@ export default function ResumeEditor() {
             {activeTab === "sections" && (
               <div>
                 <h3 className="font-bold mb-2">Sections</h3>
-                <div className="mb-3 flex gap-2 items-center">
+                <div className="mb-3 flex gap-2 items-center w-full">
                   <input
                     type="text"
-                    className="border rounded px-2 py-1 text-sm flex-1"
+                    className="border rounded px-2 py-1 text-sm flex-1 min-w-0"
                     placeholder="Add A New Section"
                     value={newSection}
                     onChange={(e) => setNewSection(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleAddSection()}
                   />
                   <button
-                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm"
+                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm whitespace-nowrap"
+                    style={{ flexShrink: 0 }}
                     onClick={handleAddSection}
                   >
                     Add
@@ -443,6 +690,9 @@ export default function ResumeEditor() {
                                   className="p-1 rounded hover:bg-red-100 text-red-500 hover:text-red-700 border border-transparent hover:border-red-200"
                                   onClick={e => { e.stopPropagation(); handleRemoveSection(section.id); }}
                                   title="Delete section"
+                                  style={{
+                                    display: ["summary", "skills", "experience", "education"].includes(section.name.toLowerCase()) ? "none" : "inline-block"
+                                  }}
                                 >
                                   🗑️
                                 </button>
@@ -502,7 +752,7 @@ export default function ResumeEditor() {
                         <input
                           className="border rounded px-2 py-1 w-full text-sm"
                           value={resumeData.skills?.join(", ") || ""}
-                          onChange={e => setResumeData({ ...resumeData, skills: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })}
+                          onChange={e => setResumeData({ ...resumeData, skills: e.target.value.split(/[, ]+/).map(s => s.trim()).filter(Boolean) })}
                         />
                         <button
                           className="mt-2 px-2 py-1 bg-blue-600 text-white rounded text-xs float-right"
@@ -637,6 +887,18 @@ export default function ResumeEditor() {
                                 : cs
                             );
                             setResumeData({ ...resumeData, customSections: updated });
+                            
+                            // Save to localStorage
+                            try {
+                              const stored = localStorage.getItem('resume_customSections');
+                              let customSections = stored ? JSON.parse(stored) : [];
+                              customSections = customSections.map((cs: any) => 
+                                cs.id === customSection.id 
+                                  ? { ...cs, content: e.target.value }
+                                  : cs
+                              );
+                              localStorage.setItem('resume_customSections', JSON.stringify(customSections));
+                            } catch {}
                           }}
                           placeholder={`Enter your ${section.name} content here...`}
                         />
@@ -836,7 +1098,7 @@ export default function ResumeEditor() {
           </div>
         </aside>
 
-        <main className="flex-1 flex items-center justify-center overflow-auto p-8 relative">
+        <main className="flex-1 flex items-center justify-center overflow-auto p-8 relative ml-80 mr-80">
           {/* ZoomController floating left of preview, vertically centered */}
           <ZoomController
             zoom={zoom}
@@ -846,20 +1108,24 @@ export default function ResumeEditor() {
             }}
             fitToWidth={fitToWidth}
             setFitToWidth={setFitToWidth}
+            onFitToWidthToggle={handleFitToWidthToggle}
             style={{ position: 'fixed', left: 320, top: '50%', transform: 'translateY(-50%)', zIndex: 30 }}
           />
           <div
             ref={previewRef}
-            className="w-[700px] min-h-[800px] transition-all duration-200 origin-top mx-auto"
+            className="transition-all duration-200 origin-top mx-auto"
             style={{
-              transform: `scale(${zoom})`,
+              width: `${700 * zoom}px`,
+              minHeight: `${800 * zoom}px`,
               boxShadow: "0 4px 24px 0 rgba(0,0,0,0.08)",
               background: "white",
               marginLeft: 70, // leave space for controller
             }}
           >
             {(() => {
-              const TemplateComponent = selectedTemplate.component;
+              // Use hoveredTemplate if available, otherwise use selectedTemplate
+              const templateToShow = hoveredTemplate || selectedTemplate;
+              const TemplateComponent = templateToShow.component;
               const styling: TemplateStyling = {
                 primaryColor: selectedColor.value,
                 fontFamily: fontStyle,
@@ -878,7 +1144,7 @@ export default function ResumeEditor() {
               }
 
               return <TemplateComponent 
-                data={resumeData} 
+                data={getSafeResumeData()} 
                 styling={styling} 
                 selectedSection={selectedSection}
                 setSelectedSection={(section: string) => {
@@ -894,7 +1160,7 @@ export default function ResumeEditor() {
           </div>
         </main>
 
-        <aside className="w-80 bg-white border-l flex flex-col p-6 gap-6 overflow-y-auto">
+        <aside className="w-80 bg-white border-l flex flex-col p-6 gap-6 fixed right-0 top-16 h-screen">
           <div>
             <h3 className="font-bold text-lg mb-2">💡 Suggestions</h3>
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded mb-3 text-sm">
@@ -916,6 +1182,10 @@ export default function ResumeEditor() {
           </div>
         </aside>
       </div>
+
+      {/* Render header edit modal */}
+      {/* Remove the Dialog/modal rendering for header editing (the block with {headerModalOpen && ( ... )}) */}
     </div>
   );
 }
+ 

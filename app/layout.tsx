@@ -12,6 +12,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* Google Fonts for Roboto, Montserrat, Inter */}
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Montserrat:wght@400;700&family=Inter:wght@400;700&display=swap" rel="stylesheet" />
+      </head>
       <body>{children}</body>
     </html>
   )

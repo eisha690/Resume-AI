@@ -39,9 +39,10 @@ interface TemplateProps {
   onEditSection?: (section: string) => void;
   onDeleteSection?: (section: string) => void;
   onMoveSection?: (section: string, direction: 'up' | 'down') => void;
+  onEditHeader?: () => void;
 }
 
-export default function ElegantTemplate({ data, styling, selectedSection, setSelectedSection, onEditSection, onDeleteSection, onMoveSection }: TemplateProps) {
+export default function ElegantTemplate({ data, styling, selectedSection, setSelectedSection, onEditSection, onDeleteSection, onMoveSection, onEditHeader }: TemplateProps) {
   // Helper to get text color from bg color
   const getTextColor = (bg: string) => bg.replace('bg-', 'text-');
   // Helper to get light bg color from main color
@@ -91,25 +92,14 @@ export default function ElegantTemplate({ data, styling, selectedSection, setSel
       }}
     >
       {/* Header */}
-      <div className={`${styling.primaryColor} text-white px-10 py-10 rounded-t-2xl relative overflow-hidden`}>
-        <div className={`absolute inset-0 ${getGradient(styling.primaryColor)} opacity-90`}></div>
-        <div className="relative z-10">
-          <div className="flex items-center gap-8">
-            <div className={`w-24 h-24 bg-white ${getTextColor(styling.primaryColor)} font-bold text-4xl flex items-center justify-center rounded-full shadow-lg`}>
-              {data.name.split(' ').map(n => n[0]).join('')}
-            </div>
-            <div>
-              <h1 
-                className="text-5xl font-bold mb-3"
-                style={{ fontSize: styling.headingSize + 8 }}
-              >
-                {data.name}
-              </h1>
-              <p className="text-xl opacity-90 mb-1">{data.email}</p>
-              {data.phone && <p className="text-lg opacity-80">{data.phone}</p>}
-              {data.address && <p className="text-lg opacity-80">{data.address}</p>}
-            </div>
-          </div>
+      <div className="flex items-center justify-between bg-gray-50 px-10 py-8 border-b border-gray-300 rounded-t-2xl">
+        <div>
+          <h1 className="font-serif text-4xl font-bold tracking-tight" style={{ color: '#333', fontSize: styling.headingSize + 8 }}>{data.name}</h1>
+        </div>
+        <div className="flex flex-col items-end text-base text-gray-700 font-medium gap-1">
+          <span>Email: {data.email}</span>
+          {data.phone && <span>Phone: {data.phone}</span>}
+          {data.address && <span>Address: {data.address}</span>}
         </div>
       </div>
 
@@ -226,19 +216,32 @@ export default function ElegantTemplate({ data, styling, selectedSection, setSel
 
         {/* Custom Sections */}
         {data.customSections && data.customSections.map((section) => (
-          <section key={section.id} style={{ marginBottom: styling.sectionSpacing }}>
-            <h2 
-              className={`font-bold mb-4 ${getTextColor(styling.primaryColor)} ${getBorderColor(styling.primaryColor)} border-b-2 pb-3`}
-              style={{ fontSize: styling.headingSize }}
-            >
-              {section.name.toUpperCase()}
-            </h2>
-            <div style={{ marginBottom: styling.paragraphSpacing }}>
-              <div className="bg-gray-50 p-6 rounded-xl">
-                <p className="text-gray-700 leading-relaxed text-lg">{section.content}</p>
+          <div
+            key={section.id}
+            className={selectedSection && selectedSection.includes(section.name.toLowerCase()) ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
+            style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
+            onClick={() => setSelectedSection && setSelectedSection(section.name.toLowerCase())}
+          >
+            {selectedSection && selectedSection.includes(section.name.toLowerCase()) && (
+              <div className="absolute right-2 top-2 flex gap-2 z-10">
+                <button onClick={e => { e.stopPropagation(); onEditSection && onEditSection(section.name.toLowerCase()); }} title="Edit">✏️</button>
+                <button onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection(section.id); }} title="Delete">🗑️</button>
               </div>
-            </div>
-          </section>
+            )}
+            <section>
+              <h2 
+                className={`font-bold mb-4 ${getTextColor(styling.primaryColor)} ${getBorderColor(styling.primaryColor)} border-b-2 pb-3`}
+                style={{ fontSize: styling.headingSize }}
+              >
+                {section.name.toUpperCase()}
+              </h2>
+              <div style={{ marginBottom: styling.paragraphSpacing }}>
+                <div className="bg-gray-50 p-6 rounded-xl">
+                  <p className="text-gray-700 leading-relaxed text-lg">{section.content}</p>
+                </div>
+              </div>
+            </section>
+          </div>
         ))}
       </div>
     </div>

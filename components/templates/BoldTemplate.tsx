@@ -39,9 +39,10 @@ interface TemplateProps {
   onEditSection?: (section: string) => void;
   onDeleteSection?: (section: string) => void;
   onMoveSection?: (section: string, direction: 'up' | 'down') => void;
+  onEditHeader?: () => void;
 }
 
-export default function BoldTemplate({ data, styling, selectedSection, setSelectedSection, onEditSection, onDeleteSection, onMoveSection }: TemplateProps) {
+export default function BoldTemplate({ data, styling, selectedSection, setSelectedSection, onEditSection, onDeleteSection, onMoveSection, onEditHeader }: TemplateProps) {
   return (
     <div 
       className="bg-white w-full min-h-[800px] shadow-2xl border-2 border-red-400"
@@ -52,26 +53,16 @@ export default function BoldTemplate({ data, styling, selectedSection, setSelect
       }}
     >
       {/* Header */}
-      <div className={`${styling.primaryColor} text-white px-10 py-10 relative overflow-hidden`}>
-        <div className="absolute inset-0 bg-black opacity-20"></div>
-        <div className="relative z-10">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 
-                className="text-6xl font-black mb-4 tracking-tight"
-                style={{ fontSize: styling.headingSize + 12 }}
-              >
-                {data.name}
-              </h1>
-              <div className="space-y-1">
-                <p className="text-xl font-semibold">{data.email}</p>
-                {data.phone && <p className="text-lg">{data.phone}</p>}
-                {data.address && <p className="text-lg">{data.address}</p>}
-              </div>
-            </div>
-            <div className={`w-32 h-32 bg-white ${styling.primaryColor.replace('bg-', 'text-')} font-black text-5xl flex items-center justify-center rounded-full border-4 border-white`}>
-              {data.name.split(' ').map(n => n[0]).join('')}
-            </div>
+      <div className={`flex items-center ${styling.primaryColor} text-white px-10 py-10 rounded-t-xl border-b-8 border-white shadow-lg`}>
+        <div className={`w-24 h-24 bg-white ${styling.primaryColor.replace('bg-', 'text-')} font-extrabold text-4xl flex items-center justify-center rounded-2xl shadow-xl mr-8`}>
+          {data.name.split(' ').map(n => n[0]).join('')}
+        </div>
+        <div className="flex-1 flex flex-col gap-2">
+          <h1 className="uppercase font-black tracking-widest text-4xl mb-2" style={{ fontSize: styling.headingSize + 10 }}>{data.name}</h1>
+          <div className="flex flex-wrap gap-8 text-base font-medium">
+            <span>Email: {data.email}</span>
+            {data.phone && <span>Phone: {data.phone}</span>}
+            {data.address && <span>Address: {data.address}</span>}
           </div>
         </div>
       </div>
@@ -189,19 +180,32 @@ export default function BoldTemplate({ data, styling, selectedSection, setSelect
 
         {/* Custom Sections */}
         {data.customSections && data.customSections.map((section) => (
-          <section key={section.id} style={{ marginBottom: styling.sectionSpacing }}>
-            <h2 
-              className={`font-black mb-4 ${styling.primaryColor.replace('bg-', 'text-')} text-3xl uppercase tracking-wider border-b-4 border-gray-300 pb-2`}
-              style={{ fontSize: styling.headingSize + 4 }}
-            >
-              {section.name}
-            </h2>
-            <div style={{ marginBottom: styling.paragraphSpacing }}>
-              <div className="bg-gray-100 p-6 rounded-lg border-l-8 border-red-500">
-                <p className="text-gray-800 text-lg leading-relaxed font-medium">{section.content}</p>
+          <div
+            key={section.id}
+            className={selectedSection && selectedSection.includes(section.name.toLowerCase()) ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
+            style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
+            onClick={() => setSelectedSection && setSelectedSection(section.name.toLowerCase())}
+          >
+            {selectedSection && selectedSection.includes(section.name.toLowerCase()) && (
+              <div className="absolute right-2 top-2 flex gap-2 z-10">
+                <button onClick={e => { e.stopPropagation(); onEditSection && onEditSection(section.name.toLowerCase()); }} title="Edit">✏️</button>
+                <button onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection(section.id); }} title="Delete">🗑️</button>
               </div>
-            </div>
-          </section>
+            )}
+            <section>
+              <h2 
+                className={`font-black mb-4 ${styling.primaryColor.replace('bg-', 'text-')} text-3xl uppercase tracking-wider border-b-4 border-gray-300 pb-2`}
+                style={{ fontSize: styling.headingSize + 4 }}
+              >
+                {section.name}
+              </h2>
+              <div style={{ marginBottom: styling.paragraphSpacing }}>
+                <div className="bg-gray-100 p-6 rounded-lg border-l-8 border-red-500">
+                  <p className="text-gray-800 text-lg leading-relaxed font-medium">{section.content}</p>
+                </div>
+              </div>
+            </section>
+          </div>
         ))}
       </div>
     </div>

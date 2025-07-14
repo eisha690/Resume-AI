@@ -39,9 +39,10 @@ interface TemplateProps {
   onEditSection?: (section: string) => void;
   onDeleteSection?: (section: string) => void;
   onMoveSection?: (section: string, direction: 'up' | 'down') => void;
+  onEditHeader?: () => void;
 }
 
-export default function MinimalTemplate({ data, styling, selectedSection, setSelectedSection, onEditSection, onDeleteSection, onMoveSection }: TemplateProps) {
+export default function MinimalTemplate({ data, styling, selectedSection, setSelectedSection, onEditSection, onDeleteSection, onMoveSection, onEditHeader }: TemplateProps) {
   return (
     <div 
       className="bg-white w-full min-h-[800px] shadow-lg border border-gray-300"
@@ -52,17 +53,12 @@ export default function MinimalTemplate({ data, styling, selectedSection, setSel
       }}
     >
       {/* Header */}
-      <div className="px-8 py-8 border-b border-gray-200">
-        <div className="text-center">
-          <h1 
-            className="text-3xl font-light mb-2 text-gray-800"
-            style={{ fontSize: styling.headingSize + 4 }}
-          >
-            {data.name}
-          </h1>
-          <p className="text-gray-600">{data.email}</p>
-          {data.phone && <p className="text-gray-500 text-sm">{data.phone}</p>}
-          {data.address && <p className="text-gray-500 text-sm">{data.address}</p>}
+      <div className="bg-white px-8 pt-10 pb-4 border-b border-gray-200 text-left">
+        <h1 className="text-3xl font-bold mb-1" style={{ color: '#222', fontSize: styling.headingSize + 4 }}>{data.name}</h1>
+        <div className="text-sm text-gray-700 font-medium flex flex-col gap-0.5">
+          <span>Email: {data.email}</span>
+          {data.phone && <span>Phone: {data.phone}</span>}
+          {data.address && <span>Address: {data.address}</span>}
         </div>
       </div>
 
@@ -167,17 +163,30 @@ export default function MinimalTemplate({ data, styling, selectedSection, setSel
 
         {/* Custom Sections */}
         {data.customSections && data.customSections.map((section) => (
-          <section key={section.id} style={{ marginBottom: styling.sectionSpacing }}>
-            <h2 
-              className={`font-medium mb-3 ${styling.primaryColor.replace('bg-', 'text-')} uppercase tracking-wide`}
-              style={{ fontSize: styling.headingSize }}
-            >
-              {section.name}
-            </h2>
-            <div style={{ marginBottom: styling.paragraphSpacing }}>
-              <p className="text-gray-700 leading-relaxed">{section.content}</p>
-            </div>
-          </section>
+          <div
+            key={section.id}
+            className={selectedSection && selectedSection.includes(section.name.toLowerCase()) ? 'border-2 border-blue-600 rounded-lg relative group' : ''}
+            style={{ marginBottom: styling.sectionSpacing, cursor: 'pointer' }}
+            onClick={() => setSelectedSection && setSelectedSection(section.name.toLowerCase())}
+          >
+            {selectedSection && selectedSection.includes(section.name.toLowerCase()) && (
+              <div className="absolute right-2 top-2 flex gap-2 z-10">
+                <button onClick={e => { e.stopPropagation(); onEditSection && onEditSection(section.name.toLowerCase()); }} title="Edit">✏️</button>
+                <button onClick={e => { e.stopPropagation(); onDeleteSection && onDeleteSection(section.id); }} title="Delete">🗑️</button>
+              </div>
+            )}
+            <section>
+              <h2 
+                className={`font-medium mb-3 ${styling.primaryColor.replace('bg-', 'text-')} uppercase tracking-wide`}
+                style={{ fontSize: styling.headingSize }}
+              >
+                {section.name}
+              </h2>
+              <div style={{ marginBottom: styling.paragraphSpacing }}>
+                <p className="text-gray-700 leading-relaxed">{section.content}</p>
+              </div>
+            </section>
+          </div>
         ))}
       </div>
     </div>
